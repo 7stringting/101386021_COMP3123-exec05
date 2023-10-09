@@ -1,56 +1,80 @@
+//Made by Ali Al Aoraebi
+//Student number 101386021
+
 const express = require('express');
 const app = express();
 const router = express.Router();
+const fs = require('fs'); // 
 
-/*
-- Create new html file name home.html 
-- add <h1> tag with message "Welcome to ExpressJs Tutorial"
-- Return home.html page to client
-*/
-router.get('/home', (req,res) => {
-  res.send('This is home router');
+// Creating a new HTML file named home.html
+const htmlContent = '<h1>Welcome to ExpressJs Tutorial</h1>';
+fs.writeFileSync('home.html', htmlContent);
+router.get('/home', (req, res) => {
+  // Reading the contents of home.html and sending it as a response
+  const htmlFile = fs.readFileSync('home.html', 'utf8');
+  res.send(htmlFile);
 });
 
-/*
-- Return all details from user.json file to client as JSON format
-*/
-router.get('/profile', (req,res) => {
-  res.send('This is profile router');
+router.get('/profile', (req, res) => {
+  // Reading the contents of user.json file
+  fs.readFile('user.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      try {
+        // Parsing the JSON data and sending it as a JSON response
+        const userData = JSON.parse(data);
+        res.json(userData);
+      } catch (parseError) {
+        console.error(parseError);
+        res.status(500).send('Internal Server Error');
+      }
+    }
+  });
 });
 
-/*
-- Modify /login router to accept username and password as query string parameter
-- Read data from user.json file
-- If username and  passsword is valid then send resonse as below 
-    {
-        status: true,
-        message: "User Is valid"
+router.get('/login', (req, res) => {
+  const { username, password } = req.query;
+  // Read the contents of user.json file
+  fs.readFile('user.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+    } else {
+      try {
+        const userData = JSON.parse(data);
+        if (userData.username === username && userData.password === password) {
+          res.json({
+            status: true,
+            message: 'User Is valid',
+          });
+        } else if (userData.username !== username) {
+          res.json({
+            status: false,
+            message: 'User Name is invalid',
+          });
+        } else {
+          res.json({
+            status: false,
+            message: 'Password is invalid',
+          });
+        }
+      } catch (parseError) {
+        console.error(parseError);
+        res.status(500).send('Internal Server Error');
+      }
     }
-- If username is invalid then send response as below 
-    {
-        status: false,
-        message: "User Name is invalid"
-    }
-- If passsword is invalid then send response as below 
-    {
-        status: false,
-        message: "Password is invalid"
-    }
-*/
-router.get('/login', (req,res) => {
-  res.send('This is login router');
+  });
 });
 
-/*
-- Modify /logout route to accept username as parameter and display message
-    in HTML format like <b>${username} successfully logout.<b>
-*/
-router.get('/logout', (req,res) => {
-  res.send('This is logout router');
+router.get('/logout/:username', (req, res) => {
+  const { username } = req.params;
+  res.send(`<b>${username} successfully logged out.</b>`);
 });
 
 app.use('/', router);
 
-app.listen(process.env.port || 8081);
-
-console.log('Web Server is listening at port '+ (process.env.port || 8081));
+app.listen(process.env.PORT || 8081, () => {
+  console.log('Web Server is listening at port ' + (process.env.PORT || 8081));
+});
